@@ -1,0 +1,28 @@
+{
+  "name": "gamification-service",
+  "version": "1.0.0",
+  "description": "AWS Lambda service for user gamification, badges, streaks, and leaderboards",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "keywords": [
+    "aws",
+    "lambda",
+    "dynamodb",
+    "badges",
+    "gamification"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.382.0",
+    "@aws-sdk/lib-dynamodb": "^3.382.0",
+    "uuid": "^9.0.1"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "ai-features-lambda",
+  "version": "1.0.0",
+  "description": "Lambda function for AI-powered features: auto-tagging, sentiment analysis, image moderation, recommendations, and toxicity detection.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.382.0",
+    "@aws-sdk/lib-dynamodb": "^3.382.0",
+    "@aws-sdk/client-comprehend": "^3.382.0",
+    "@aws-sdk/client-rekognition": "^3.382.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

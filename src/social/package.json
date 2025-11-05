@@ -1,0 +1,28 @@
+{
+  "name": "social-lambda",
+  "version": "1.0.0",
+  "description": "AWS Lambda for social app: follow, messages, posts, feed",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"No tests defined\" && exit 0"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.343.0",
+    "@aws-sdk/lib-dynamodb": "^3.343.0",
+    "uuid": "^9.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "aws",
+    "lambda",
+    "dynamodb",
+    "social",
+    "messages",
+    "posts"
+  ],
+  "author": "Prashant Chauhan",
+  "license": "MIT"
+}

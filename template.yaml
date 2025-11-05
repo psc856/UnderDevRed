@@ -1,12 +1,12 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: Serverless Reddit-like backend with communities
+Description: Complete Reddit-like Platform with AI & Gamification
 
 Globals:
   Function:
-    Timeout: 10
+    Timeout: 30
     Runtime: nodejs22.x
-    MemorySize: 256
+    MemorySize: 512
     Environment:
       Variables:
         APP_TABLE: !Ref AppTable
@@ -73,15 +73,8 @@ Resources:
       Handler: app.handler
       CodeUri: src/presign/
       Policies:
-        - Version: "2012-10-17"
-          Statement:
-            - Effect: Allow
-              Action:
-                - s3:PutObject
-                - s3:PutObjectAcl
-                - s3:AbortMultipartUpload
-                - s3:ListMultipartUploadParts
-              Resource: !Sub "arn:aws:s3:::${MediaBucket}/*"
+        - S3CrudPolicy:
+            BucketName: !Ref MediaBucket
       Events:
         PresignApi:
           Type: Api
@@ -96,33 +89,43 @@ Resources:
       Handler: app.handler
       CodeUri: src/posts/
       Policies:
-        - Version: "2012-10-17"
-          Statement:
-            - Effect: Allow
-              Action:
-                - dynamodb:PutItem
-                - dynamodb:GetItem
-                - dynamodb:Query
-                - dynamodb:UpdateItem
-                - dynamodb:Scan
-              Resource: 
-                - !Sub "${AppTable.Arn}"
-                - !Sub "${AppTable.Arn}/index/*"
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AppTable
       Events:
-        CreatePostApi:
+        CreatePost:
           Type: Api
           Properties:
             Path: /communities/{name}/posts
             Method: post
-        GetPostApi:
+        GetPost:
           Type: Api
           Properties:
             Path: /posts/{postId}
             Method: get
-        ListPostsApi:
+        EditPost:
+          Type: Api
+          Properties:
+            Path: /posts/{postId}
+            Method: put
+        DeletePost:
+          Type: Api
+          Properties:
+            Path: /posts/{postId}
+            Method: delete
+        ListPosts:
           Type: Api
           Properties:
             Path: /communities/{name}/posts
+            Method: get
+        SearchPosts:
+          Type: Api
+          Properties:
+            Path: /posts/search
+            Method: get
+        TrendingPosts:
+          Type: Api
+          Properties:
+            Path: /posts/trending
             Method: get
 
   CommunitiesFunction:
@@ -132,44 +135,39 @@ Resources:
       Handler: app.handler
       CodeUri: src/communities/
       Policies:
-        - Version: "2012-10-17"
-          Statement:
-            - Effect: Allow
-              Action:
-                - dynamodb:PutItem
-                - dynamodb:GetItem
-                - dynamodb:Query
-                - dynamodb:UpdateItem
-                - dynamodb:DeleteItem
-              Resource: 
-                - !Sub "${AppTable.Arn}"
-                - !Sub "${AppTable.Arn}/index/*"
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AppTable
       Events:
-        CreateCommunityApi:
+        CreateCommunity:
           Type: Api
           Properties:
             Path: /communities
             Method: post
-        GetCommunityApi:
+        GetCommunity:
           Type: Api
           Properties:
             Path: /communities/{name}
             Method: get
-        ListCommunitiesApi:
+        ListCommunities:
           Type: Api
           Properties:
             Path: /communities
             Method: get
-        JoinCommunityApi:
+        JoinCommunity:
           Type: Api
           Properties:
             Path: /communities/{name}/join
             Method: post
-        LeaveCommunityApi:
+        LeaveCommunity:
           Type: Api
           Properties:
             Path: /communities/{name}/leave
             Method: post
+        DiscoverCommunities:
+          Type: Api
+          Properties:
+            Path: /communities/discover
+            Method: get
 
   VotingFunction:
     Type: AWS::Serverless::Function
@@ -178,30 +176,20 @@ Resources:
       Handler: app.handler
       CodeUri: src/voting/
       Policies:
-        - Version: "2012-10-17"
-          Statement:
-            - Effect: Allow
-              Action:
-                - dynamodb:PutItem
-                - dynamodb:GetItem
-                - dynamodb:Query
-                - dynamodb:UpdateItem
-                - dynamodb:DeleteItem
-              Resource: 
-                - !Sub "${AppTable.Arn}"
-                - !Sub "${AppTable.Arn}/index/*"
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AppTable
       Events:
-        VoteOnPostApi:
+        VoteOnPost:
           Type: Api
           Properties:
             Path: /posts/{postId}/vote
             Method: post
-        GetVoteOnPostApi:
+        GetVoteOnPost:
           Type: Api
           Properties:
             Path: /posts/{postId}/vote
             Method: get
-        VoteOnCommentApi:
+        VoteOnComment:
           Type: Api
           Properties:
             Path: /comments/{commentId}/vote
@@ -214,40 +202,30 @@ Resources:
       Handler: app.handler
       CodeUri: src/comments/
       Policies:
-        - Version: "2012-10-17"
-          Statement:
-            - Effect: Allow
-              Action:
-                - dynamodb:PutItem
-                - dynamodb:GetItem
-                - dynamodb:Query
-                - dynamodb:UpdateItem
-                - dynamodb:DeleteItem
-              Resource: 
-                - !Sub "${AppTable.Arn}"
-                - !Sub "${AppTable.Arn}/index/*"
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AppTable
       Events:
-        CreateCommentApi:
+        CreateComment:
           Type: Api
           Properties:
             Path: /posts/{postId}/comments
             Method: post
-        GetCommentsApi:
+        GetComments:
           Type: Api
           Properties:
             Path: /posts/{postId}/comments
             Method: get
-        GetCommentApi:
+        GetComment:
           Type: Api
           Properties:
             Path: /comments/{commentId}
             Method: get
-        UpdateCommentApi:
+        UpdateComment:
           Type: Api
           Properties:
             Path: /comments/{commentId}
             Method: put
-        DeleteCommentApi:
+        DeleteComment:
           Type: Api
           Properties:
             Path: /comments/{commentId}
@@ -260,54 +238,341 @@ Resources:
       Handler: app.handler
       CodeUri: src/users/
       Policies:
-        - Version: "2012-10-17"
-          Statement:
-            - Effect: Allow
-              Action:
-                - dynamodb:PutItem
-                - dynamodb:GetItem
-                - dynamodb:Query
-                - dynamodb:UpdateItem
-                - dynamodb:Scan
-              Resource: 
-                - !Sub "${AppTable.Arn}"
-                - !Sub "${AppTable.Arn}/index/*"
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AppTable
       Events:
-        CreateUserApi:
+        CreateUser:
           Type: Api
           Properties:
             Path: /users
             Method: post
-        GetUserApi:
+        GetUser:
           Type: Api
           Properties:
             Path: /users/{username}
             Method: get
-        UpdateUserApi:
+        UpdateUser:
           Type: Api
           Properties:
             Path: /users/{username}
             Method: put
-        GetUserPostsApi:
+        GetUserPosts:
           Type: Api
           Properties:
             Path: /users/{username}/posts
             Method: get
-        GetUserCommentsApi:
+        GetUserComments:
           Type: Api
           Properties:
             Path: /users/{username}/comments
             Method: get
-        GetUserStatsApi:
+        GetUserStats:
           Type: Api
           Properties:
             Path: /users/{username}/stats
             Method: get
-        UpdateUserKarmaApi:
+
+  ModerationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-ModerationFunction"
+      Handler: app.handler
+      CodeUri: src/moderation/
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AppTable
+      Events:
+        ReportPost:
           Type: Api
           Properties:
-            Path: /users/{username}/karma
+            Path: /posts/{postId}/report
             Method: post
+        ReportComment:
+          Type: Api
+          Properties:
+            Path: /comments/{commentId}/report
+            Method: post
+        HidePost:
+          Type: Api
+          Properties:
+            Path: /posts/{postId}/hide
+            Method: post
+        HideComment:
+          Type: Api
+          Properties:
+            Path: /comments/{commentId}/hide
+            Method: post
+        RemovePost:
+          Type: Api
+          Properties:
+            Path: /posts/{postId}/remove
+            Method: delete
+        RemoveComment:
+          Type: Api
+          Properties:
+            Path: /comments/{commentId}/remove
+            Method: delete
+        BanUser:
+          Type: Api
+          Properties:
+            Path: /communities/{name}/ban
+            Method: post
+        UnbanUser:
+          Type: Api
+          Properties:
+            Path: /communities/{name}/ban/{userId}
+            Method: delete
+        CheckBan:
+          Type: Api
+          Properties:
+            Path: /communities/{name}/ban/{userId}
+            Method: get
+        SetModerator:
+          Type: Api
+          Properties:
+            Path: /communities/{name}/moderators
+            Method: post
+        GetPendingReports:
+          Type: Api
+          Properties:
+            Path: /reports/pending
+            Method: get
+        UpdateReport:
+          Type: Api
+          Properties:
+            Path: /reports/{reportId}
+            Method: put
+
+  SocialFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-SocialFunction"
+      Handler: app.handler
+      CodeUri: src/social/
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AppTable
+      Events:
+        FollowUser:
+          Type: Api
+          Properties:
+            Path: /users/{username}/follow
+            Method: post
+        UnfollowUser:
+          Type: Api
+          Properties:
+            Path: /users/{username}/follow
+            Method: delete
+        GetFollowers:
+          Type: Api
+          Properties:
+            Path: /users/{username}/followers
+            Method: get
+        GetFollowing:
+          Type: Api
+          Properties:
+            Path: /users/{username}/following
+            Method: get
+        SendMessage:
+          Type: Api
+          Properties:
+            Path: /messages
+            Method: post
+        GetConversation:
+          Type: Api
+          Properties:
+            Path: /messages/conversations/{conversationId}
+            Method: get
+        GetInbox:
+          Type: Api
+          Properties:
+            Path: /messages/inbox
+            Method: get
+        MarkRead:
+          Type: Api
+          Properties:
+            Path: /messages/{messageId}/read
+            Method: put
+        Crosspost:
+          Type: Api
+          Properties:
+            Path: /posts/{postId}/crosspost
+            Method: post
+        ShareExternal:
+          Type: Api
+          Properties:
+            Path: /posts/{postId}/share
+            Method: post
+        GetFeed:
+          Type: Api
+          Properties:
+            Path: /feed
+            Method: get
+
+  GamificationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-GamificationFunction"
+      Handler: app.handler
+      CodeUri: src/gamification/
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AppTable
+      Events:
+        AwardBadge:
+          Type: Api
+          Properties:
+            Path: /users/{username}/badges
+            Method: post
+        GetBadges:
+          Type: Api
+          Properties:
+            Path: /users/{username}/badges
+            Method: get
+        UpdateStreak:
+          Type: Api
+          Properties:
+            Path: /users/{username}/streak
+            Method: post
+        CommunityLeaderboard:
+          Type: Api
+          Properties:
+            Path: /communities/{name}/leaderboard
+            Method: get
+        GlobalLeaderboard:
+          Type: Api
+          Properties:
+            Path: /leaderboard
+            Method: get
+        GetUserLevel:
+          Type: Api
+          Properties:
+            Path: /users/{username}/level
+            Method: get
+        CheckAchievements:
+          Type: Api
+          Properties:
+            Path: /users/{username}/check-achievements
+            Method: post
+
+  AIFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-AIFunction"
+      Handler: app.handler
+      CodeUri: src/ai/
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AppTable
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - comprehend:DetectSentiment
+                - comprehend:DetectKeyPhrases
+                - comprehend:DetectEntities
+              Resource: "*"
+            - Effect: Allow
+              Action:
+                - rekognition:DetectModerationLabels
+                - rekognition:DetectLabels
+              Resource: "*"
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+              Resource: !Sub "arn:aws:s3:::${MediaBucket}/*"
+      Events:
+        AutoTagPost:
+          Type: Api
+          Properties:
+            Path: /posts/{postId}/auto-tag
+            Method: post
+        GetPostSentiment:
+          Type: Api
+          Properties:
+            Path: /posts/{postId}/sentiment
+            Method: get
+        GetCommentSentiment:
+          Type: Api
+          Properties:
+            Path: /comments/{commentId}/sentiment
+            Method: get
+        ModerateImage:
+          Type: Api
+          Properties:
+            Path: /media/moderate
+            Method: post
+        GetRecommendations:
+          Type: Api
+          Properties:
+            Path: /recommendations
+            Method: get
+        AnalyzeToxicity:
+          Type: Api
+          Properties:
+            Path: /comments/{commentId}/analyze-toxicity
+            Method: post
+
+  UniqueFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-UniqueFunction"
+      Handler: app.handler
+      CodeUri: src/unique/
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AppTable
+      Events:
+        CreatePoll:
+          Type: Api
+          Properties:
+            Path: /communities/{name}/polls
+            Method: post
+        VoteOnPoll:
+          Type: Api
+          Properties:
+            Path: /polls/{pollId}/vote
+            Method: post
+        GetPoll:
+          Type: Api
+          Properties:
+            Path: /polls/{pollId}
+            Method: get
+        CreateCapsule:
+          Type: Api
+          Properties:
+            Path: /communities/{name}/capsules
+            Method: post
+        OpenCapsule:
+          Type: Api
+          Properties:
+            Path: /capsules/{capsuleId}
+            Method: get
+        UpcomingCapsules:
+          Type: Api
+          Properties:
+            Path: /communities/{name}/capsules/upcoming
+            Method: get
+        CreateEvent:
+          Type: Api
+          Properties:
+            Path: /communities/{name}/events
+            Method: post
+        RsvpEvent:
+          Type: Api
+          Properties:
+            Path: /events/{eventId}/rsvp
+            Method: post
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /events/{eventId}
+            Method: get
+        UpcomingEvents:
+          Type: Api
+          Properties:
+            Path: /communities/{name}/events/upcoming
+            Method: get
 
 Outputs:
   ApiUrl:

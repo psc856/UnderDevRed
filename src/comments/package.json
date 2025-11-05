@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "AWS Lambda function for managing post comments with DynamoDB",
   "main": "index.js",
-  "type": "module",
   "scripts": {
     "start": "node index.js",
     "test": "echo \"No tests specified\" && exit 0"

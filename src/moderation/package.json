@@ -1,0 +1,20 @@
+{
+  "name": "moderation-service",
+  "version": "1.0.0",
+  "description": "AWS Lambda moderation service for posts, comments, and community management",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"No test specified\" && exit 0"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.380.0",
+    "@aws-sdk/lib-dynamodb": "^3.380.0",
+    "uuid": "^9.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "author": "Prashant Chauhan",
+  "license": "MIT"
+}
