@@ -1,0 +1,319 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Serverless Reddit-like backend with communities
+
+Globals:
+  Function:
+    Timeout: 10
+    Runtime: nodejs22.x
+    MemorySize: 256
+    Environment:
+      Variables:
+        APP_TABLE: !Ref AppTable
+        MEDIA_BUCKET: !Ref MediaBucket
+
+Resources:
+
+  AppTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${AWS::StackName}-AppTable"
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+        - AttributeName: GSI1PK
+          AttributeType: S
+        - AttributeName: GSI1SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      GlobalSecondaryIndexes:
+        - IndexName: GSI1
+          KeySchema:
+            - AttributeName: GSI1PK
+              KeyType: HASH
+            - AttributeName: GSI1SK
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+  MediaBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${AWS::StackName}-media-bucket"
+      VersioningConfiguration:
+        Status: Suspended
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - "*"
+            AllowedMethods:
+              - PUT
+              - POST
+              - GET
+            AllowedOrigins:
+              - "*"
+            MaxAge: 3000
+
+  PresignFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-PresignFunction"
+      Handler: app.handler
+      CodeUri: src/presign/
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - s3:PutObject
+                - s3:PutObjectAcl
+                - s3:AbortMultipartUpload
+                - s3:ListMultipartUploadParts
+              Resource: !Sub "arn:aws:s3:::${MediaBucket}/*"
+      Events:
+        PresignApi:
+          Type: Api
+          Properties:
+            Path: /media/presign
+            Method: post
+
+  PostsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-PostsFunction"
+      Handler: app.handler
+      CodeUri: src/posts/
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
+                - dynamodb:GetItem
+                - dynamodb:Query
+                - dynamodb:UpdateItem
+                - dynamodb:Scan
+              Resource: 
+                - !Sub "${AppTable.Arn}"
+                - !Sub "${AppTable.Arn}/index/*"
+      Events:
+        CreatePostApi:
+          Type: Api
+          Properties:
+            Path: /communities/{name}/posts
+            Method: post
+        GetPostApi:
+          Type: Api
+          Properties:
+            Path: /posts/{postId}
+            Method: get
+        ListPostsApi:
+          Type: Api
+          Properties:
+            Path: /communities/{name}/posts
+            Method: get
+
+  CommunitiesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-CommunitiesFunction"
+      Handler: app.handler
+      CodeUri: src/communities/
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
+                - dynamodb:GetItem
+                - dynamodb:Query
+                - dynamodb:UpdateItem
+                - dynamodb:DeleteItem
+              Resource: 
+                - !Sub "${AppTable.Arn}"
+                - !Sub "${AppTable.Arn}/index/*"
+      Events:
+        CreateCommunityApi:
+          Type: Api
+          Properties:
+            Path: /communities
+            Method: post
+        GetCommunityApi:
+          Type: Api
+          Properties:
+            Path: /communities/{name}
+            Method: get
+        ListCommunitiesApi:
+          Type: Api
+          Properties:
+            Path: /communities
+            Method: get
+        JoinCommunityApi:
+          Type: Api
+          Properties:
+            Path: /communities/{name}/join
+            Method: post
+        LeaveCommunityApi:
+          Type: Api
+          Properties:
+            Path: /communities/{name}/leave
+            Method: post
+
+  VotingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-VotingFunction"
+      Handler: app.handler
+      CodeUri: src/voting/
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
+                - dynamodb:GetItem
+                - dynamodb:Query
+                - dynamodb:UpdateItem
+                - dynamodb:DeleteItem
+              Resource: 
+                - !Sub "${AppTable.Arn}"
+                - !Sub "${AppTable.Arn}/index/*"
+      Events:
+        VoteOnPostApi:
+          Type: Api
+          Properties:
+            Path: /posts/{postId}/vote
+            Method: post
+        GetVoteOnPostApi:
+          Type: Api
+          Properties:
+            Path: /posts/{postId}/vote
+            Method: get
+        VoteOnCommentApi:
+          Type: Api
+          Properties:
+            Path: /comments/{commentId}/vote
+            Method: post
+
+  CommentsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-CommentsFunction"
+      Handler: app.handler
+      CodeUri: src/comments/
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
+                - dynamodb:GetItem
+                - dynamodb:Query
+                - dynamodb:UpdateItem
+                - dynamodb:DeleteItem
+              Resource: 
+                - !Sub "${AppTable.Arn}"
+                - !Sub "${AppTable.Arn}/index/*"
+      Events:
+        CreateCommentApi:
+          Type: Api
+          Properties:
+            Path: /posts/{postId}/comments
+            Method: post
+        GetCommentsApi:
+          Type: Api
+          Properties:
+            Path: /posts/{postId}/comments
+            Method: get
+        GetCommentApi:
+          Type: Api
+          Properties:
+            Path: /comments/{commentId}
+            Method: get
+        UpdateCommentApi:
+          Type: Api
+          Properties:
+            Path: /comments/{commentId}
+            Method: put
+        DeleteCommentApi:
+          Type: Api
+          Properties:
+            Path: /comments/{commentId}
+            Method: delete
+
+  UsersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-UsersFunction"
+      Handler: app.handler
+      CodeUri: src/users/
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
+                - dynamodb:GetItem
+                - dynamodb:Query
+                - dynamodb:UpdateItem
+                - dynamodb:Scan
+              Resource: 
+                - !Sub "${AppTable.Arn}"
+                - !Sub "${AppTable.Arn}/index/*"
+      Events:
+        CreateUserApi:
+          Type: Api
+          Properties:
+            Path: /users
+            Method: post
+        GetUserApi:
+          Type: Api
+          Properties:
+            Path: /users/{username}
+            Method: get
+        UpdateUserApi:
+          Type: Api
+          Properties:
+            Path: /users/{username}
+            Method: put
+        GetUserPostsApi:
+          Type: Api
+          Properties:
+            Path: /users/{username}/posts
+            Method: get
+        GetUserCommentsApi:
+          Type: Api
+          Properties:
+            Path: /users/{username}/comments
+            Method: get
+        GetUserStatsApi:
+          Type: Api
+          Properties:
+            Path: /users/{username}/stats
+            Method: get
+        UpdateUserKarmaApi:
+          Type: Api
+          Properties:
+            Path: /users/{username}/karma
+            Method: post
+
+Outputs:
+  ApiUrl:
+    Description: "REST API endpoint"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+  MediaBucketName:
+    Value: !Ref MediaBucket
+  TableName:
+    Value: !Ref AppTable

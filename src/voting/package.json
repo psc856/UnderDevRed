@@ -1,0 +1,20 @@
+{
+  "name": "voting-service",
+  "version": "1.0.0",
+  "description": "AWS Lambda for handling post and comment voting using DynamoDB",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.667.0",
+    "@aws-sdk/lib-dynamodb": "^3.667.0"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}
