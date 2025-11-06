@@ -1,6 +1,6 @@
-# 🚀 Reddit-Like Serverless Backend
+# 🚀 Capstone Project Serverless Backend
 
-A complete, production-ready Reddit alternative built with AWS SAM (Serverless Application Model), featuring 75+ API endpoints with AI-powered features, gamification, and unique social features.
+A complete, production-ready Capstone Project alternative built with AWS SAM (Serverless Application Model), featuring 75+ API endpoints with AI-powered features, gamification, and unique social features.
 
 ## 🌐 Deployed API
 
@@ -8,7 +8,7 @@ A complete, production-ready Reddit alternative built with AWS SAM (Serverless A
 
 **Region:** ap-south-1 (Mumbai)
 
-**Stack Name:** reddit-backend
+**Stack Name:** Capstone Project-backend
 
 ---
 
@@ -38,7 +38,7 @@ curl https://9q03u53gk1.execute-api.ap-south-1.amazonaws.com/Prod/communities
 ## 📂 Project Structure
 
 ```
-serverless_reddit_backend/
+serverless_Capstone Project_backend/
 ├── src/
 │   ├── presign/
 │   │   └── app.js
@@ -182,7 +182,7 @@ chmod +x test_all_apis.sh
 - ✅ Share to external platforms (`POST /posts/{id}/share`)
 - ✅ Personalized feed (`GET /feed?userId=xxx`)
 
-### 🌟 UNIQUE EXCITING FEATURES (Better than Reddit!)
+### 🌟 UNIQUE EXCITING FEATURES (Better than Capstone Project!)
 
 #### 1. Interactive Polls ✅
 - ✅ Create polls with multiple options (`POST /communities/{name}/polls`)
@@ -306,7 +306,7 @@ chmod +x test_all_apis.sh
 
 **TOTAL: 75 API Endpoints!** 🎉
 
-## 🎮 What Makes This Better Than Reddit
+## 🎮 What Makes This Better Than Capstone Project
 
 ### 1. **AI-Powered Intelligence** 🤖
 - Auto-tags posts using NLP
@@ -517,7 +517,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 ---
 
-**You now have a complete, production-ready Reddit alternative with 75+ endpoints and unique features!** 🚀
+**You now have a complete, production-ready Capstone Project alternative with 75+ endpoints and unique features!** 🚀
 
 ## 📚 Additional Resources
 
